@@ -1,14 +1,13 @@
 import Foundation
 import CoreBluetooth
-import Combine
 
-class BleService: NSObject, ObservableObject {
-    // MARK: - Published properties
-    @Published var isScanning = false
-    @Published var isConnected = false
-    @Published var discoveredPeripherals: [CBPeripheral] = []
-    @Published var connectedPeripheral: CBPeripheral?
-    @Published var errorMessage: String?
+class BleService: NSObject, BleServiceProtocol {
+    // MARK: - Public properties
+    var isScanning: Bool = false
+    var isConnected: Bool = false
+    var discoveredPeripherals: [CBPeripheral] = []
+    var connectedPeripheral: CBPeripheral?
+    var errorMessage: String?
     
     // MARK: - Private properties
     private var centralManager: CBCentralManager!

@@ -1,30 +1,40 @@
+//
+//  ContentView.swift
+//  LedModeController
+//
+//  Created by 長峯幸佑 on 2025/03/13.
+//
+
 import SwiftUI
 import CoreBluetooth
 
 struct ContentView: View {
-    @StateObject private var bleService = BleService()
-    @State private var redValue: Double = 0
-    @State private var greenValue: Double = 0
-    @State private var blueValue: Double = 0
+    @StateObject private var viewModel: AppViewModel
     @State private var showAlert = false
+    
+    init(viewModel: AppViewModel? = nil) {
+        // 依存性注入またはデフォルト値を使用
+        let vm = viewModel ?? AppViewModel(bleService: BleService())
+        _viewModel = StateObject(wrappedValue: vm)
+    }
     
     var body: some View {
         NavigationStack {
             VStack(spacing: 20) {
                 // 接続状態表示
                 HStack {
-                    Image(systemName: bleService.isConnected ? "bluetooth.connected" : "bluetooth.slash")
-                        .foregroundColor(bleService.isConnected ? .blue : .red)
-                    Text(bleService.isConnected ? "接続済み" : "未接続")
-                        .foregroundColor(bleService.isConnected ? .blue : .red)
+                    Image(systemName: viewModel.isConnected ? "bluetooth.connected" : "bluetooth.slash")
+                        .foregroundColor(viewModel.isConnected ? .blue : .red)
+                    Text(viewModel.isConnected ? "接続済み" : "未接続")
+                        .foregroundColor(viewModel.isConnected ? .blue : .red)
                 }
                 .font(.headline)
                 .padding()
                 
                 // スキャン/接続ボタン
-                if bleService.isConnected {
+                if viewModel.isConnected {
                     Button(action: {
-                        bleService.disconnect()
+                        viewModel.disconnect()
                     }) {
                         Text("切断")
                             .frame(maxWidth: .infinity)
@@ -35,24 +45,24 @@ struct ContentView: View {
                     }
                 } else {
                     Button(action: {
-                        bleService.startScanning()
+                        viewModel.startScanning()
                     }) {
-                        Text(bleService.isScanning ? "スキャン中..." : "デバイスをスキャン")
+                        Text(viewModel.isScanning ? "スキャン中..." : "デバイスをスキャン")
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .background(bleService.isScanning ? Color.gray : Color.blue)
+                            .background(viewModel.isScanning ? Color.gray : Color.blue)
                             .foregroundColor(.white)
                             .cornerRadius(10)
                     }
-                    .disabled(bleService.isScanning)
+                    .disabled(viewModel.isScanning)
                 }
                 
                 // 発見したデバイスのリスト
-                if !bleService.isConnected && !bleService.discoveredPeripherals.isEmpty {
+                if !viewModel.isConnected && !viewModel.discoveredPeripherals.isEmpty {
                     List {
-                        ForEach(bleService.discoveredPeripherals, id: \.identifier) { peripheral in
+                        ForEach(viewModel.discoveredPeripherals, id: \.identifier) { peripheral in
                             Button(action: {
-                                bleService.connect(to: peripheral)
+                                viewModel.connect(to: peripheral)
                             }) {
                                 HStack {
                                     Text(peripheral.name ?? "不明なデバイス")
@@ -67,19 +77,19 @@ struct ContentView: View {
                 }
                 
                 // RGB値コントロール（接続時のみ表示）
-                if bleService.isConnected {
+                if viewModel.isConnected {
                     VStack(spacing: 20) {
-                        ColorPreview(red: redValue, green: greenValue, blue: blueValue)
+                        ColorPreview(red: viewModel.redValue, green: viewModel.greenValue, blue: viewModel.blueValue)
                             .frame(height: 100)
                             .cornerRadius(10)
                             .padding(.horizontal)
                         
-                        ColorSlider(value: $redValue, color: .red, label: "赤")
-                        ColorSlider(value: $greenValue, color: .green, label: "緑")
-                        ColorSlider(value: $blueValue, color: .blue, label: "青")
+                        ColorSlider(value: $viewModel.redValue, color: .red, label: "赤")
+                        ColorSlider(value: $viewModel.greenValue, color: .green, label: "緑")
+                        ColorSlider(value: $viewModel.blueValue, color: .blue, label: "青")
                         
                         Button(action: {
-                            sendColor()
+                            viewModel.sendColor()
                         }) {
                             Text("色を送信")
                                 .frame(maxWidth: .infinity)
@@ -99,24 +109,16 @@ struct ContentView: View {
             .alert(isPresented: $showAlert) {
                 Alert(
                     title: Text("エラー"),
-                    message: Text(bleService.errorMessage ?? "不明なエラー"),
+                    message: Text(viewModel.errorMessage ?? "不明なエラー"),
                     dismissButton: .default(Text("OK"))
                 )
             }
-            .onChange(of: bleService.errorMessage) { newValue in
+            .onChange(of: viewModel.errorMessage) { newValue in
                 if newValue != nil {
                     showAlert = true
                 }
             }
         }
-    }
-    
-    private func sendColor() {
-        let red = UInt8(redValue * 255)
-        let green = UInt8(greenValue * 255)
-        let blue = UInt8(blueValue * 255)
-        
-        bleService.sendRGBValue(red: red, green: green, blue: blue)
     }
 }
 
@@ -149,5 +151,5 @@ struct ColorPreview: View {
 }
 
 #Preview {
-    ContentView()
+    ContentView(viewModel: AppViewModel(bleService: MockBleService()))
 }
