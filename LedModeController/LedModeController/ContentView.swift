@@ -21,6 +21,13 @@ struct ContentView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 20) {
+                // RGB値コントロール（接続時のみ表示）
+                if viewModel.isConnected {
+
+                }
+                
+                ColorControllerView(vm: viewModel)
+                
                 // 接続状態表示
                 HStack {
                     Image(systemName: viewModel.isConnected ? "bluetooth.connected" : "bluetooth.slash")
@@ -33,6 +40,7 @@ struct ContentView: View {
                 
                 // スキャン/接続ボタン
                 if viewModel.isConnected {
+                    Spacer()
                     Button(action: {
                         viewModel.disconnect()
                     }) {
@@ -42,12 +50,14 @@ struct ContentView: View {
                             .background(Color.red)
                             .foregroundColor(.white)
                             .cornerRadius(10)
+                            .frame(width: 80)
+                        Spacer()
                     }
                 } else {
                     Button(action: {
                         viewModel.startScanning()
                     }) {
-                        Text(viewModel.isScanning ? "スキャン中..." : "デバイスをスキャン")
+                        Text(viewModel.isScanning ? "スキャン中..." : "デバイスに接続")
                             .frame(maxWidth: .infinity)
                             .padding()
                             .background(viewModel.isScanning ? Color.gray : Color.blue)
@@ -57,55 +67,28 @@ struct ContentView: View {
                     .disabled(viewModel.isScanning)
                 }
                 
-                // 発見したデバイスのリスト
-                if !viewModel.isConnected && !viewModel.discoveredPeripherals.isEmpty {
-                    List {
-                        ForEach(viewModel.discoveredPeripherals, id: \.identifier) { peripheral in
-                            Button(action: {
-                                viewModel.connect(to: peripheral)
-                            }) {
-                                HStack {
-                                    Text(peripheral.name ?? "不明なデバイス")
-                                    Spacer()
-                                    Image(systemName: "bluetooth")
-                                        .foregroundColor(.blue)
-                                }
-                            }
-                        }
-                    }
-                    .frame(height: 200)
-                }
-                
-                // RGB値コントロール（接続時のみ表示）
-                if viewModel.isConnected {
-                    VStack(spacing: 20) {
-                        ColorPreview(red: viewModel.redValue, green: viewModel.greenValue, blue: viewModel.blueValue)
-                            .frame(height: 100)
-                            .cornerRadius(10)
-                            .padding(.horizontal)
-                        
-                        ColorSlider(value: $viewModel.redValue, color: .red, label: "赤")
-                        ColorSlider(value: $viewModel.greenValue, color: .green, label: "緑")
-                        ColorSlider(value: $viewModel.blueValue, color: .blue, label: "青")
-                        
-                        Button(action: {
-                            viewModel.sendColor()
-                        }) {
-                            Text("色を送信")
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(Color.blue)
-                                .foregroundColor(.white)
-                                .cornerRadius(10)
-                        }
-                    }
-                    .padding()
-                }
+//                // 発見したデバイスのリスト
+//                if !viewModel.isConnected && !viewModel.discoveredPeripherals.isEmpty {
+//                    List {
+//                        ForEach(viewModel.discoveredPeripherals, id: \.identifier) { peripheral in
+//                            Button(action: {
+//                                viewModel.connect(to: peripheral)
+//                            }) {
+//                                HStack {
+//                                    Text(peripheral.name ?? "不明なデバイス")
+//                                    Spacer()
+//                                    Image(systemName: "bluetooth")
+//                                        .foregroundColor(.blue)
+//                                }
+//                            }
+//                        }
+//                    }
+//                    .frame(height: 200)
+//                }
                 
                 Spacer()
             }
             .padding()
-            .navigationTitle("LED コントローラー")
             .alert(isPresented: $showAlert) {
                 Alert(
                     title: Text("エラー"),

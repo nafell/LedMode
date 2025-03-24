@@ -16,7 +16,7 @@ class BleService: NSObject, BleServiceProtocol {
     private var targetCharacteristic: CBCharacteristic?
     
     // MARK: - Constants
-    private let targetManufacturerName = "ESP32_RGBLED"
+    private let targetManufacturerName = "ESP32_RGBLED1"
     
     private let serviceUUID = CBUUID(string: "16a658e2-a958-40b2-8400-a762eb0d65f2")
     private let characteristicUUID = CBUUID(string: "82e6ec24-6e44-4bac-93f9-0c2f3936f188")
@@ -41,6 +41,16 @@ class BleService: NSObject, BleServiceProtocol {
         // 10秒後にスキャンを停止
         DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) { [weak self] in
             self?.stopScanning()
+            
+            guard let targetName = self?.targetManufacturerName else { return }
+            
+            for peripheral in self?.discoveredPeripherals ?? [] {
+                guard let name = peripheral.name else { continue }
+                if name.hasPrefix(targetName) {
+                    self?.connect(to: peripheral)
+                    return
+                }
+            }
         }
     }
     
@@ -64,7 +74,7 @@ class BleService: NSObject, BleServiceProtocol {
     func sendRGBValue(red: UInt8, green: UInt8, blue: UInt8) {
         guard let peripheral = connectedPeripheral,
               let characteristic = targetCharacteristic else {
-            errorMessage = "デバイスに接続されていないか、特性が見つかりません"
+            errorMessage = "デバイスに接続されていません"
             return
         }
         

@@ -14,6 +14,8 @@ class AppViewModel: ObservableObject {
     @Published var greenValue: Double = 0
     @Published var blueValue: Double = 0
     
+    @Published var selectedColor: ColorModel = ColorModel(id: "Black", label: "オフ", red: 0, green: 0, blue: 0)
+    
     // MARK: - Private properties
     private var bleService: BleServiceProtocol
     private var cancellables = Set<AnyCancellable>()
@@ -72,4 +74,15 @@ class AppViewModel: ObservableObject {
         
         bleService.sendRGBValue(red: red, green: green, blue: blue)
     }
-} 
+    
+    func sendColor(color: ColorModel) {
+        selectedColor = color
+        print("SendColor:", color.red, color.green, color.blue)
+        let (newRed, newGreen, newBlue) = convertToLedColor(red: color.red, green: color.green, blue: color.blue)
+        bleService.sendRGBValue(red: newRed, green: newGreen, blue: newBlue)
+    }
+    
+    private func convertToLedColor(red: UInt8, green: UInt8, blue: UInt8) -> (UInt8, UInt8, UInt8) {
+        return (red,green,blue)
+    }
+}
