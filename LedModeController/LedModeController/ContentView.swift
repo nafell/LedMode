@@ -22,14 +22,14 @@ struct ContentView: View {
         NavigationStack {
             VStack(spacing: 20) {
                 // RGB値コントロール（接続時のみ表示）
-                if viewModel.isConnected {
-                    ColorSliderView(viewModel: viewModel)
+                if !viewModel.isConnected {
+                    ColorControllerView(viewModel: viewModel)
                 }
                 
                 // 接続状態表示(3台分)
                 HStack {
                     Spacer()
-                    ConnectionLabel(name: "1号", isConnected: viewModel.deviceConnectionDict["ESP32_RGBLED1"] ?? false)
+                    ConnectionLabel(name: "1号", isConnected: viewModel.deviceConnectionDict["ESP32_RGBLED1"] ?? true)
                     Spacer()
                     ConnectionLabel(name: "2号", isConnected: viewModel.deviceConnectionDict["ESP32_RGBLED2"] ?? false)
                     Spacer()
@@ -40,7 +40,7 @@ struct ContentView: View {
                 .padding()
                 
                 // スキャン/接続ボタン
-                if viewModel.isConnected {
+                if !viewModel.isConnected {
                     HStack{
                         Button(action: {
                             viewModel.disconnect()
@@ -52,9 +52,7 @@ struct ContentView: View {
                                 .foregroundColor(.white)
                                 .cornerRadius(10)
                                 .frame(width: 80)
-                            Spacer()
                         }
-                        Spacer()
                         Button(action: {
                             viewModel.startScanning()
                         }) {

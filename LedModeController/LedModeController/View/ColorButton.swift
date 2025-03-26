@@ -5,6 +5,8 @@ struct ColorButton: View {
     var color: ColorModel
     var action: (ColorModel) -> Void
     var isSelected: Bool
+    var isLarge: Bool = false
+    var isThin: Bool = false
     
     var body: some View {
         Button(action: {
@@ -14,7 +16,7 @@ struct ColorButton: View {
                 .foregroundColor(
                     isSelected ? Color.white : Color.black
                 )
-                .frame(width: 170, height: 80)
+                .frame(width: isThin ? 80 : 170, height: isLarge ? 160 : 80)
                 .font(
                     .system(size: 24, weight: isSelected ? .black : .regular, design:.rounded)
                 )
