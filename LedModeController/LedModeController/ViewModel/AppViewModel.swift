@@ -77,7 +77,6 @@ class AppViewModel: ObservableObject {
     
     func sendColor(color: ColorModel) {
         selectedColor = color
-        print("SendColor:", color.red, color.green, color.blue)
         let (newRed, newGreen, newBlue) = convertToLedColor(red: color.red, green: color.green, blue: color.blue)
         bleService.sendRGBValue(red: newRed, green: newGreen, blue: newBlue)
     }

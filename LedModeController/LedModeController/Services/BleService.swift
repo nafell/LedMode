@@ -78,7 +78,12 @@ class BleService: NSObject, BleServiceProtocol {
             return
         }
         
-        let data = Data([red, green, blue])
+        // convert data to hex string
+        let hexString = "#" + [red, green, blue].map { String(format: "%02X", $0) }.joined()
+        print("Send RGB Hex: \(hexString)")
+
+        let data = hexString.data(using: .utf8)!
+
         peripheral.writeValue(data, for: characteristic, type: .withResponse)
     }
     
