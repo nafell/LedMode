@@ -5,8 +5,9 @@ class MockBleService: BleServiceProtocol {
     // MARK: - Public properties
     var isScanning: Bool = false
     var isConnected: Bool = false
+    var deviceConnectionDict: [String : Bool] = [:]
     var discoveredPeripherals: [CBPeripheral] = []
-    var connectedPeripheral: CBPeripheral?
+    var connectedPeripherals: [CBPeripheral] = []
     var errorMessage: String?
     
     // モック用のデバイス
@@ -43,13 +44,13 @@ class MockBleService: BleServiceProtocol {
     func connect(to peripheral: CBPeripheral) {
         // 接続成功を模擬
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            self?.connectedPeripheral = peripheral
+//            self?.connectedPeripheral = peripheral
             self?.isConnected = true
         }
     }
     
     func disconnect() {
-        connectedPeripheral = nil
+//        connectedPeripheral = nil
         isConnected = false
     }
     

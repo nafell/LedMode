@@ -37,6 +37,7 @@ struct ColorButton: View {
         .padding([.top, .bottom], 6)
         .onHover(perform: { isHovered in
             if (isHovered) {
+                print("Hover/Gaze:", color.label)
                 action(color)
             }
         })

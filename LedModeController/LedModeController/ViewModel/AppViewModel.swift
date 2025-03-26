@@ -6,15 +6,17 @@ class AppViewModel: ObservableObject {
     // MARK: - Published properties
     @Published var isScanning: Bool = false
     @Published var isConnected: Bool = false
+    @Published var deviceConnectionDict: [String: Bool] = [:]
     @Published var discoveredPeripherals: [CBPeripheral] = []
-    @Published var connectedPeripheral: CBPeripheral?
+    @Published var connectedPeripherals: [CBPeripheral] = []
     @Published var errorMessage: String?
     
     @Published var redValue: Double = 0
     @Published var greenValue: Double = 0
     @Published var blueValue: Double = 0
     
-    @Published var selectedColor: ColorModel = ColorModel(id: "Black", label: "オフ", red: 0, green: 0, blue: 0)
+    private let offColor = ColorModel(id: "Black", label: "オフ", red: 0, green: 0, blue: 0)
+    @Published var selectedColor: ColorModel
     
     // MARK: - Private properties
     private var bleService: BleServiceProtocol
@@ -24,6 +26,7 @@ class AppViewModel: ObservableObject {
     // MARK: - Initialization
     init(bleService: BleServiceProtocol) {
         self.bleService = bleService
+        selectedColor = offColor
         setupBindings()
     }
     
@@ -38,8 +41,9 @@ class AppViewModel: ObservableObject {
                 // BleServiceの状態を反映
                 self.isScanning = self.bleService.isScanning
                 self.isConnected = self.bleService.isConnected
+                self.deviceConnectionDict = self.bleService.deviceConnectionDict
                 self.discoveredPeripherals = self.bleService.discoveredPeripherals
-                self.connectedPeripheral = self.bleService.connectedPeripheral
+                self.connectedPeripherals = self.bleService.connectedPeripherals
                 
                 // エラーメッセージの監視
                 if let errorMessage = self.bleService.errorMessage {
@@ -48,6 +52,11 @@ class AppViewModel: ObservableObject {
                 }
             }
             .store(in: &cancellables)
+        
+//        connectedPeripheral.publisher.sink { [weak self] _ in
+//            guard let self = self else { return }
+//            self.sendColor(color: offColor)
+//        }
     }
     
     // MARK: - Public methods

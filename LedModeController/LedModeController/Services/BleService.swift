@@ -5,8 +5,10 @@ class BleService: NSObject, BleServiceProtocol {
     // MARK: - Public properties
     var isScanning: Bool = false
     var isConnected: Bool = false
+    var deviceConnectionDict: [String: Bool] = [:]
+    
     var discoveredPeripherals: [CBPeripheral] = []
-    var connectedPeripheral: CBPeripheral?
+    var connectedPeripherals: [CBPeripheral] = []
     var errorMessage: String?
     
     // MARK: - Private properties
@@ -14,9 +16,10 @@ class BleService: NSObject, BleServiceProtocol {
     private var targetPeripheral: CBPeripheral?
     private var targetService: CBService?
     private var targetCharacteristic: CBCharacteristic?
+    private var peripheralCharasteristicDict: [CBPeripheral: CBCharacteristic] = [:]
     
     // MARK: - Constants
-    private let targetManufacturerName = "ESP32_RGBLED3"
+    private let targetManufacturerNamePrefix = "ESP32_RGBLED"
     
     private let serviceUUID = CBUUID(string: "16a658e2-a958-40b2-8400-a762eb0d65f2")
     private let characteristicUUID = CBUUID(string: "82e6ec24-6e44-4bac-93f9-0c2f3936f188")
@@ -42,13 +45,13 @@ class BleService: NSObject, BleServiceProtocol {
         DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) { [weak self] in
             self?.stopScanning()
             
-            guard let targetName = self?.targetManufacturerName else { return }
+            guard let targetName = self?.targetManufacturerNamePrefix else { return }
             
+            // 決まったデバイスに決め打ちで接続
             for peripheral in self?.discoveredPeripherals ?? [] {
                 guard let name = peripheral.name else { continue }
                 if name.hasPrefix(targetName) {
                     self?.connect(to: peripheral)
-                    return
                 }
             }
         }
@@ -65,28 +68,26 @@ class BleService: NSObject, BleServiceProtocol {
     }
     
     func disconnect() {
-        if let peripheral = connectedPeripheral {
+        for peripheral in connectedPeripherals {
             centralManager.cancelPeripheralConnection(peripheral)
         }
     }
     
     // RGB値を送信する（各色0-255の値）
     func sendRGBValue(red: UInt8, green: UInt8, blue: UInt8) {
-        guard let peripheral = connectedPeripheral,
-              let characteristic = targetCharacteristic else {
-            errorMessage = "デバイスに接続されていません"
+        if connectedPeripherals == [] {
+            print("デバイス未接続")
             return
         }
-//        
-//        // convert data to hex string
-//        let hexString = [blue, green, red].map { String(format: "%02X", $0) }.joined()
-//        print("Send RGB Hex: \(hexString)")
-//
-//        let data = hexString.data(using: .utf8)!
+        
         let data = Data([red, green, blue])
         print("Send RGB data: ", red, green, blue)
-
-        peripheral.writeValue(data, for: characteristic, type: .withResponse)
+        
+        for peripheral in connectedPeripherals {
+            if let charasteristic = peripheralCharasteristicDict[peripheral] {
+                peripheral.writeValue(data, for: charasteristic, type: .withResponse)
+            }
+        }
     }
     
     // 特定の製造者名を持つペリフェラルを探す
@@ -98,7 +99,7 @@ class BleService: NSObject, BleServiceProtocol {
         }
         
         if let localName = advertisementData[CBAdvertisementDataLocalNameKey] as? String {
-            return localName.contains(targetManufacturerName)
+            return localName.contains(targetManufacturerNamePrefix)
         }
         
         return false
@@ -131,14 +132,16 @@ extension BleService: CBCentralManagerDelegate {
         if isTargetPeripheral(peripheral, advertisementData: advertisementData) {
             if !discoveredPeripherals.contains(where: { $0.identifier == peripheral.identifier }) {
                 discoveredPeripherals.append(peripheral)
-                print("発見したデバイス: \(peripheral.name ?? "不明")")
+                print("発見したデバイス: \(peripheral.name ?? "UNKNOWN_DEVICE")")
             }
         }
     }
     
+    // MARK: Peripheral接続イベント
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
-        connectedPeripheral = peripheral
+        connectedPeripherals.append(peripheral)
         isConnected = true
+        deviceConnectionDict[peripheral.name ?? "UNKNOWN_DEVICE"] = true
         peripheral.delegate = self
         peripheral.discoverServices([serviceUUID])
         print("\(peripheral.name ?? "デバイス")に接続しました")
@@ -149,11 +152,24 @@ extension BleService: CBCentralManagerDelegate {
         errorMessage = "接続に失敗しました: \(error?.localizedDescription ?? "不明なエラー")"
     }
     
+    // MARK: Peripheral切断イベント
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
-        isConnected = false
-        connectedPeripheral = nil
+        if let index = connectedPeripherals.firstIndex(of: peripheral) {
+            connectedPeripherals.remove(at: index)
+        }
+        deviceConnectionDict[peripheral.name ?? "UNKNOWN_DEVICE"] = false
+        
+        var isConnectedTemp = false
+        for value in deviceConnectionDict.values {
+            isConnectedTemp = isConnectedTemp || value
+        }
+        isConnected = isConnectedTemp
+        
+        
         if let error = error {
-            errorMessage = "切断されました: \(error.localizedDescription)"
+            // 切断時にダイアログを出さない
+//            errorMessage = "切断されました: \(error.localizedDescription)"
+            print("切断されました: \(error.localizedDescription)")
         } else {
             print("正常に切断されました")
         }
@@ -164,7 +180,7 @@ extension BleService: CBCentralManagerDelegate {
 extension BleService: CBPeripheralDelegate {
     func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
         if let error = error {
-            errorMessage = "サービス検出エラー: \(error.localizedDescription)"
+            errorMessage = "BLE-Service検出エラー: \(error.localizedDescription)"
             return
         }
         
@@ -181,7 +197,7 @@ extension BleService: CBPeripheralDelegate {
     
     func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
         if let error = error {
-            errorMessage = "特性検出エラー: \(error.localizedDescription)"
+            errorMessage = "Charasteristic検出エラー: \(error.localizedDescription)"
             return
         }
         
@@ -189,8 +205,9 @@ extension BleService: CBPeripheralDelegate {
         
         for characteristic in characteristics {
             if characteristic.uuid == characteristicUUID {
-                targetCharacteristic = characteristic
-                print("対象の特性を発見しました")
+//                targetCharacteristic = characteristic
+                peripheralCharasteristicDict[peripheral] = characteristic
+                print("対象のCharasteristicを発見しました")
                 break
             }
         }

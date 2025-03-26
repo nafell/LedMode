@@ -14,7 +14,8 @@ protocol BleServiceProtocol {
     // 状態取得用プロパティ
     var isScanning: Bool { get }
     var isConnected: Bool { get }
+    var deviceConnectionDict: [String: Bool] { get }
     var discoveredPeripherals: [CBPeripheral] { get }
-    var connectedPeripheral: CBPeripheral? { get }
+    var connectedPeripherals: [CBPeripheral] { get }
     var errorMessage: String? { get set }
 } 

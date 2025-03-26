@@ -6,8 +6,6 @@ struct ColorSliderView: View {
     
     var body: some View {
         VStack(spacing: 20) {
-            ColorControllerView(vm: viewModel)
-
             ColorPreview(red: viewModel.redValue, green: viewModel.greenValue, blue: viewModel.blueValue)
                 .frame(height: 100)
                 .cornerRadius(10)

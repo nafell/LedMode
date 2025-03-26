@@ -23,35 +23,49 @@ struct ContentView: View {
             VStack(spacing: 20) {
                 // RGB値コントロール（接続時のみ表示）
                 if viewModel.isConnected {
-
+                    ColorSliderView(viewModel: viewModel)
                 }
                 
-                ColorControllerView(vm: viewModel)
-                
-                // 接続状態表示
+                // 接続状態表示(3台分)
                 HStack {
-                    Image(systemName: viewModel.isConnected ? "bluetooth.connected" : "bluetooth.slash")
-                        .foregroundColor(viewModel.isConnected ? .blue : .red)
-                    Text(viewModel.isConnected ? "接続済み" : "未接続")
-                        .foregroundColor(viewModel.isConnected ? .blue : .red)
+                    Spacer()
+                    ConnectionLabel(name: "1号", isConnected: viewModel.deviceConnectionDict["ESP32_RGBLED1"] ?? false)
+                    Spacer()
+                    ConnectionLabel(name: "2号", isConnected: viewModel.deviceConnectionDict["ESP32_RGBLED2"] ?? false)
+                    Spacer()
+                    ConnectionLabel(name: "3号", isConnected: viewModel.deviceConnectionDict["ESP32_RGBLED3"] ?? false)
+                    Spacer()
                 }
                 .font(.headline)
                 .padding()
                 
                 // スキャン/接続ボタン
                 if viewModel.isConnected {
-                    Spacer()
-                    Button(action: {
-                        viewModel.disconnect()
-                    }) {
-                        Text("切断")
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.red)
-                            .foregroundColor(.white)
-                            .cornerRadius(10)
-                            .frame(width: 80)
+                    HStack{
+                        Button(action: {
+                            viewModel.disconnect()
+                        }) {
+                            Text("全切断")
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color.red)
+                                .foregroundColor(.white)
+                                .cornerRadius(10)
+                                .frame(width: 80)
+                            Spacer()
+                        }
                         Spacer()
+                        Button(action: {
+                            viewModel.startScanning()
+                        }) {
+                            Text(viewModel.isScanning ? "スキャン中..." : "再スキャン")
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(viewModel.isScanning ? Color.gray : Color.blue)
+                                .foregroundColor(.white)
+                                .cornerRadius(10)
+                        }
+                        .disabled(viewModel.isScanning)
                     }
                 } else {
                     Button(action: {
