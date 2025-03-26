@@ -16,7 +16,7 @@ class BleService: NSObject, BleServiceProtocol {
     private var targetCharacteristic: CBCharacteristic?
     
     // MARK: - Constants
-    private let targetManufacturerName = "ESP32_RGBLED1"
+    private let targetManufacturerName = "ESP32_RGBLED3"
     
     private let serviceUUID = CBUUID(string: "16a658e2-a958-40b2-8400-a762eb0d65f2")
     private let characteristicUUID = CBUUID(string: "82e6ec24-6e44-4bac-93f9-0c2f3936f188")
@@ -77,12 +77,14 @@ class BleService: NSObject, BleServiceProtocol {
             errorMessage = "デバイスに接続されていません"
             return
         }
-        
-        // convert data to hex string
-        let hexString = "#" + [red, green, blue].map { String(format: "%02X", $0) }.joined()
-        print("Send RGB Hex: \(hexString)")
-
-        let data = hexString.data(using: .utf8)!
+//        
+//        // convert data to hex string
+//        let hexString = [blue, green, red].map { String(format: "%02X", $0) }.joined()
+//        print("Send RGB Hex: \(hexString)")
+//
+//        let data = hexString.data(using: .utf8)!
+        let data = Data([red, green, blue])
+        print("Send RGB data: ", red, green, blue)
 
         peripheral.writeValue(data, for: characteristic, type: .withResponse)
     }
