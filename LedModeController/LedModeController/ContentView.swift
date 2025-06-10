@@ -22,14 +22,14 @@ struct ContentView: View {
         NavigationStack {
             VStack(spacing: 20) {
                 // RGB値コントロール（接続時のみ表示）
-                if !viewModel.isConnected {
+                if viewModel.isConnected {
                     ColorControllerView(viewModel: viewModel)
                 }
                 
                 // 接続状態表示(3台分)
                 HStack {
                     Spacer()
-                    ConnectionLabel(name: "1号", isConnected: viewModel.deviceConnectionDict["ESP32_RGBLED1"] ?? true)
+                    ConnectionLabel(name: "1号", isConnected: viewModel.deviceConnectionDict["ESP32_RGBLED1"] ?? false)
                     Spacer()
                     ConnectionLabel(name: "2号", isConnected: viewModel.deviceConnectionDict["ESP32_RGBLED2"] ?? false)
                     Spacer()
